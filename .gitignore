@@ -11,6 +11,8 @@
 [Mm]emoryCaptures/
 [Rr]ecordings/
 Asset[Ss]tore[Tt]ools*/
+*.DS_Store
+/[Ll]ocal/
 
 # Visual Studio / Rider
 .vs/
@@ -74,3 +76,8 @@ Desktop.ini
 *.swp
 *.swo
 *~
+
+# ========================
+# ClaudeCode
+# ========================
+Claude.md
