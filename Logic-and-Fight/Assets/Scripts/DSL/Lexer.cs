@@ -35,7 +35,7 @@ public enum TokenType
     EXCLAM_EQUAL,   // !=
     GREATER,        // >
     GREATER_EQUAL,  // >=
-    LESS,           // 
+    LESS,           // <
     LESS_EQUAL,     // <=
 
     // 키워드
@@ -43,12 +43,10 @@ public enum TokenType
     OR,             // OR
     IF,             // IF
     ELSE,           // ELSE
-    THEN,           // THEN (문법 스타일 결정 후 제거 고려)
     FOR,            // FOR
     IN,             // IN
     WHILE,          // WHILE
     FUNC,           // FUNC
-    VAR,            // VAR
     RETURN,         // RETURN
     NULL,           // null
 
@@ -204,7 +202,6 @@ public class Lexer
             "for" => TokenType.FOR,
             "while" => TokenType.WHILE,
             "func" => TokenType.FUNC,
-            "var" => TokenType.VAR,
             "return" => TokenType.RETURN,
             "and" => TokenType.AND,
             "or" => TokenType.OR,
@@ -228,12 +225,17 @@ public class Lexer
 
     Token ReadString()
     {
-        pos++; // " 첫 따옴표 건너뛰기
+        pos++; // 시작 " 건너뛰기
         int start = pos;
         while (pos < source.Length && source[pos] != '"')
             pos++;
+
         string value = source.Substring(start, pos - start);
-        if (pos < source.Length) pos++; // 닫는 " 건너뛰기 ← 이게 없음
+
+        if (pos >= source.Length)
+            throw new Exception("문자열이 닫히지 않았습니다!");
+
+        pos++; // 닫는 " 건너뛰기
         return new Token(TokenType.STRING, value);
     }
 
@@ -245,7 +247,7 @@ public class Lexer
 
     void SkipWhiteSpace()
     {
-        while (pos < source.Length && source[pos] == ' ')
+        while (pos < source.Length && source[pos] == ' ' || source[pos] == '\t' || source[pos] == '\r')
             pos++;
     }
 
