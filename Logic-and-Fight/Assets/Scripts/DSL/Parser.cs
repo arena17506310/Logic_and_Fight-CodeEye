@@ -59,12 +59,12 @@ public class Parser
         if (type == TokenType.IF) return ParseIf();
         if (type == TokenType.WHILE) return ParseWhile();
         if (type == TokenType.FOR) return ParseFor();
-        if (type == TokenType.FUNC) return ParseFuncDef();
+        if (type == TokenType.FUNC) return ParseFunc();
         if (type == TokenType.IDENT)
         {
             if (tokens[pos + 1].type == TokenType.ASSIGN)
             {
-                return ParseASSIGN();
+                return ParseAssign();
             }
             else
             {
@@ -167,4 +167,88 @@ public class Parser
         funcDefNode.Body = ParseBlock();
         return funcDefNode;
     }
+
+    private ASTNode ParsePrimary()
+    {
+        Token t = Peek();
+
+        if (t.type == TokenType.NUMBER)
+        {
+            Advance();
+            return new NumberLiteral { Value = double.Parse(t.value) };
+        }
+
+        if (t.type == TokenType.STRING)
+        {
+            Advance();
+            return new StringLiteral { Value = t.value };
+        }
+
+        if (t.type == TokenType.BOOLEAN)
+        {
+            Advance();
+            return new BooleanLiteral { Value = bool.Parse(t.value) };
+        }
+
+        if (t.type == TokenType.NULL)
+        {
+            Advance();
+            return new NullLiteral();
+        }
+
+        if (t.type == TokenType.IDENT)
+        {
+            Advance();
+            string name = t.value;
+
+            if (Peek().type == TokenType.LPAREN) 
+            {
+                FuncCallNode funcCallNode = new();
+                funcCallNode.FuncName = name;   
+                Advance();
+
+                if (Peek().type != TokenType.RPAREN)
+                {
+                    funcCallNode.Arguments.Add(ParseExpression());
+                    while (Peek().type == TokenType.COMMA)
+                    {
+                        Advance();
+                        funcCallNode.Arguments.Add(ParseExpression());
+                    }
+                }
+
+                Expect(TokenType.RPAREN);
+                return funcCallNode;
+            }
+
+            return new Identifier { Name = name };
+            // 변수명인지 함수호출인지 구분 필요
+            // 다음 토큰이 ( 면 → 함수호출
+            // 아니면 → 변수명
+        }
+
+        if (t.type == TokenType.LPAREN)
+        {
+            Advance(); // ( 소비
+            ASTNode expr = ParseExpression();
+            Expect(TokenType.RPAREN);
+            return expr;
+        }
+
+        throw new System.Exception("알 수 없는 토큰: " + t.type);
+    }
+
+    private ASTNode ParseUnary()
+    {
+        if(Peek().type == TokenType.MINUS || Peek().type == TokenType.EXCLAM)
+        {
+            TokenType op = Advance().type;
+            ASTNode operand = ParseUnary();
+            return new UnaryOpNode { Op = op, Operand = operand };
+        }
+
+        return ParseUnary();
+
+    }
+
 }
