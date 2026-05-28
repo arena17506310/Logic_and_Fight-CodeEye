@@ -86,7 +86,7 @@ public class ForNode : ASTNode
 
 public class FuncDefNode : ASTNode
 {
-    public string FuncName;
+    public string Name;
     public List<string> Parameters = new();
     public BlockNode Body;
 }

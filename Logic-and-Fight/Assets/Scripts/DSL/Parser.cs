@@ -32,7 +32,7 @@ public class Parser
         }
         else
         {
-            throw new System.Exception($"¿¹»óµÈ ÅäÅ« : {type} \n ÀÔ·ÂµÈ ÅäÅ« : {Peek().type}");
+            throw new System.Exception($"ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å« : {type} \n ï¿½Ô·Âµï¿½ ï¿½ï¿½Å« : {Peek().type}");
         }
     }
 
@@ -68,11 +68,11 @@ public class Parser
             }
             else
             {
-                ParseExpression();
+                return ParseExpression();
             }
         }
 
-        throw new System.Exception("¾Ë ¼ö ¾ø´Â ¹®Àå: " + Peek().type);
+        throw new System.Exception("ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: " + Peek().type);
     }
 
     private BlockNode ParseBlock()
@@ -111,7 +111,7 @@ public class Parser
         ifNode.ThenBlock = ParseBlock();
         if (Peek().type == TokenType.ELSE)
         {
-            Advance(); // else ¼Òºñ
+            Advance(); // else ï¿½Òºï¿½
             if (Peek().type == TokenType.IF)
             {
                 ifNode.ElseBlock = ParseIf(); // else if
@@ -150,7 +150,7 @@ public class Parser
     {
         FuncDefNode funcDefNode = new();
         Expect(TokenType.FUNC);
-        funcDefNode.FuncName = Expect(TokenType.IDENT).value;
+        funcDefNode.Name = Expect(TokenType.IDENT).value;
         Expect(TokenType.LPAREN);
 
         if(Peek().type != TokenType.RPAREN)
@@ -158,7 +158,7 @@ public class Parser
             funcDefNode.Parameters.Add(Expect(TokenType.IDENT).value);
             while(Peek().type == TokenType.COMMA)
             {
-                Advance(); // ÄÞ¸¶ ¼Òºñ
+                Advance(); // ï¿½Þ¸ï¿½ ï¿½Òºï¿½
                 funcDefNode.Parameters.Add(Expect(TokenType.IDENT).value);
             }
         }
@@ -222,20 +222,20 @@ public class Parser
             }
 
             return new Identifier { Name = name };
-            // º¯¼ö¸íÀÎÁö ÇÔ¼öÈ£ÃâÀÎÁö ±¸ºÐ ÇÊ¿ä
-            // ´ÙÀ½ ÅäÅ«ÀÌ ( ¸é ¡æ ÇÔ¼öÈ£Ãâ
-            // ¾Æ´Ï¸é ¡æ º¯¼ö¸í
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å«ï¿½ï¿½ ( ï¿½ï¿½ ï¿½ï¿½ ï¿½Ô¼ï¿½È£ï¿½ï¿½
+            // ï¿½Æ´Ï¸ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         }
 
         if (t.type == TokenType.LPAREN)
         {
-            Advance(); // ( ¼Òºñ
+            Advance(); // ( ï¿½Òºï¿½
             ASTNode expr = ParseExpression();
             Expect(TokenType.RPAREN);
             return expr;
         }
 
-        throw new System.Exception("¾Ë ¼ö ¾ø´Â ÅäÅ«: " + t.type);
+        throw new System.Exception("ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å«: " + t.type);
     }
 
     private ASTNode ParseUnary()
@@ -247,8 +247,104 @@ public class Parser
             return new UnaryOpNode { Op = op, Operand = operand };
         }
 
-        return ParseUnary();
+        return ParsePower();
+    }
 
+    // ** : right-associative
+    private ASTNode ParsePower()
+    {
+        ASTNode left = ParsePrimary();
+        if (Peek().type == TokenType.DSTAR)
+        {
+            TokenType op = Advance().type;
+            ASTNode right = ParseUnary();
+            return new BinaryOpNode { Left = left, Op = op, Right = right };
+        }
+        return left;
+    }
+
+    private ASTNode ParseMultiplicative()
+    {
+        ASTNode left = ParseUnary();
+        while (Peek().type == TokenType.STAR
+            || Peek().type == TokenType.SLASH
+            || Peek().type == TokenType.PERCENT)
+        {
+            TokenType op = Advance().type;
+            ASTNode right = ParseUnary();
+            left = new BinaryOpNode { Left = left, Op = op, Right = right };
+        }
+        return left;
+    }
+
+    private ASTNode ParseAdditive()
+    {
+        ASTNode left = ParseMultiplicative();
+        while (Peek().type == TokenType.PLUS || Peek().type == TokenType.MINUS)
+        {
+            TokenType op = Advance().type;
+            ASTNode right = ParseMultiplicative();
+            left = new BinaryOpNode { Left = left, Op = op, Right = right };
+        }
+        return left;
+    }
+
+    private ASTNode ParseComparison()
+    {
+        ASTNode left = ParseAdditive();
+        while (Peek().type == TokenType.LESS
+            || Peek().type == TokenType.LESS_EQUAL
+            || Peek().type == TokenType.GREATER
+            || Peek().type == TokenType.GREATER_EQUAL)
+        {
+            TokenType op = Advance().type;
+            ASTNode right = ParseAdditive();
+            left = new BinaryOpNode { Left = left, Op = op, Right = right };
+        }
+        return left;
+    }
+
+    private ASTNode ParseEquality()
+    {
+        ASTNode left = ParseComparison();
+        while (Peek().type == TokenType.EQUAL || Peek().type == TokenType.EXCLAM_EQUAL)
+        {
+            TokenType op = Advance().type;
+            ASTNode right = ParseComparison();
+            left = new BinaryOpNode { Left = left, Op = op, Right = right };
+        }
+        return left;
+    }
+
+    private ASTNode ParseAnd()
+    {
+        ASTNode left = ParseEquality();
+        while (Peek().type == TokenType.AND)
+        {
+            TokenType op = Advance().type;
+            ASTNode right = ParseEquality();
+            left = new BinaryOpNode { Left = left, Op = op, Right = right };
+        }
+        return left;
+    }
+
+    private ASTNode ParseOr()
+    {
+        ASTNode left = ParseAnd();
+        while (Peek().type == TokenType.OR)
+        {
+            TokenType op = Advance().type;
+            ASTNode right = ParseAnd();
+            left = new BinaryOpNode { Left = left, Op = op, Right = right };
+        }
+        return left;
+    }
+
+    // priority (low -> high):
+    // or -> and -> == != -> < <= > >= -> + - -> * / % -> ** -> unary(-, !) -> primary
+    private ASTNode ParseExpression()
+    {
+        return ParseOr();
     }
 
 }
