@@ -19,6 +19,7 @@ Asset[Ss]tore[Tt]ools*/
 .idea/
 *.csproj
 *.sln
+*.slnx
 *.suo
 *.tmp
 *.user
@@ -81,4 +82,4 @@ Desktop.ini
 # ClaudeCode
 # ========================
 Claude.md
-docs/
+
